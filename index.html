@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Focus - Control de impulsos</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f3f5f7;
+      color: #1f2937;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .contenedor {
+      width: 100%;
+      max-width: 700px;
+      background: white;
+      padding: 32px;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      text-align: center;
+    }
+
+    h1 {
+      margin-top: 0;
+      margin-bottom: 8px;
+      font-size: 2rem;
+    }
+
+    .subtitulo {
+      margin-bottom: 24px;
+      color: #6b7280;
+      line-height: 1.5;
+    }
+
+    .panel {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+
+    .tarjeta {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 14px 18px;
+      min-width: 120px;
+    }
+
+    .etiqueta {
+      font-size: 0.9rem;
+      color: #6b7280;
+      margin-bottom: 6px;
+    }
+
+    .valor {
+      font-size: 1.4rem;
+      font-weight: bold;
+    }
+
+    #caja {
+      width: 220px;
+      height: 220px;
+      margin: 24px auto;
+      border-radius: 20px;
+      background: #9ca3af;
+      cursor: pointer;
+      transition: transform 0.12s ease, background-color 0.2s ease;
+      border: 6px solid #e5e7eb;
+    }
+
+    #caja:active {
+      transform: scale(0.98);
+    }
+
+    #mensaje {
+      min-height: 28px;
+      font-weight: bold;
+      margin-top: 12px;
+      margin-bottom: 18px;
+    }
+
+    button {
+      background: #111827;
+      color: white;
+      border: none;
+      padding: 14px 22px;
+      border-radius: 12px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: opacity 0.2s ease;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .instrucciones {
+      margin-top: 20px;
+      padding: 16px;
+      background: #f9fafb;
+      border-radius: 14px;
+      text-align: left;
+      line-height: 1.6;
+      color: #374151;
+    }
+
+    .final {
+      margin-top: 18px;
+      padding: 14px;
+      border-radius: 12px;
+      background: #eef6ff;
+      color: #1d4ed8;
+      font-weight: bold;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="contenedor">
+    <h1>Focus · Control de impulsos</h1>
+    <p class="subtitulo">
+      Haz clic <strong>solo</strong> cuando el cuadro esté <strong>verde</strong>.<br>
+      Si haces clic en rojo, pierdes puntos.
+    </p>
+
+    <div class="panel">
+      <div class="tarjeta">
+        <div class="etiqueta">Tiempo</div>
+        <div class="valor" id="tiempo">20</div>
+      </div>
+      <div class="tarjeta">
+        <div class="etiqueta">Puntuación</div>
+        <div class="valor" id="puntuacion">0</div>
+      </div>
+      <div class="tarjeta">
+        <div class="etiqueta">Aciertos</div>
+        <div class="valor" id="aciertos">0</div>
+      </div>
+      <div class="tarjeta">
+        <div class="etiqueta">Fallos</div>
+        <div class="valor" id="fallos">0</div>
+      </div>
+    </div>
+
+    <div id="caja"></div>
+
+    <div id="mensaje">Pulsa “Empezar” para jugar.</div>
+
+    <button id="botonEmpezar">Empezar partida</button>
+
+    <div class="final" id="resultadoFinal"></div>
+
+    <div class="instrucciones">
+      <strong>Cómo funciona:</strong><br>
+      • Verde = haz clic<br>
+      • Rojo = no hagas clic<br>
+      • Tienes 20 segundos<br>
+      • El objetivo es acertar sin reaccionar por impulso
+    </div>
+  </div>
+
+  <script>
+    const caja = document.getElementById("caja");
+    const tiempoEl = document.getElementById("tiempo");
+    const puntuacionEl = document.getElementById("puntuacion");
+    const aciertosEl = document.getElementById("aciertos");
+    const fallosEl = document.getElementById("fallos");
+    const mensajeEl = document.getElementById("mensaje");
+    const botonEmpezar = document.getElementById("botonEmpezar");
+    const resultadoFinal = document.getElementById("resultadoFinal");
+
+    let tiempo = 20;
+    let puntuacion = 0;
+    let aciertos = 0;
+    let fallos = 0;
+    let juegoActivo = false;
+    let colorActual = "gris";
+    let intervaloTiempo = null;
+    let intervaloColor = null;
+
+    function actualizarPanel() {
+      tiempoEl.textContent = tiempo;
+      puntuacionEl.textContent = puntuacion;
+      aciertosEl.textContent = aciertos;
+      fallosEl.textContent = fallos;
+    }
+
+    function cambiarColorAleatorio() {
+      const esVerde = Math.random() > 0.5;
+
+      if (esVerde) {
+        caja.style.backgroundColor = "#22c55e";
+        colorActual = "verde";
+      } else {
+        caja.style.backgroundColor = "#ef4444";
+        colorActual = "rojo";
+      }
+    }
+
+    function empezarJuego() {
+      tiempo = 20;
+      puntuacion = 0;
+      aciertos = 0;
+      fallos = 0;
+      juegoActivo = true;
+      resultadoFinal.style.display = "none";
+      mensajeEl.textContent = "¡Empieza! Haz clic solo en verde.";
+      botonEmpezar.disabled = true;
+
+      actualizarPanel();
+      cambiarColorAleatorio();
+
+      intervaloTiempo = setInterval(() => {
+        tiempo--;
+        actualizarPanel();
+
+        if (tiempo <= 0) {
+          terminarJuego();
+        }
+      }, 1000);
+
+      intervaloColor = setInterval(() => {
+        cambiarColorAleatorio();
+      }, 900);
+    }
+
+    function terminarJuego() {
+      juegoActivo = false;
+      clearInterval(intervaloTiempo);
+      clearInterval(intervaloColor);
+
+      caja.style.backgroundColor = "#9ca3af";
+      colorActual = "gris";
+      botonEmpezar.disabled = false;
+      mensajeEl.textContent = "Partida terminada.";
+
+      let evaluacion = "";
+
+      if (puntuacion >= 12) {
+        evaluacion = "Muy buen control de impulsos.";
+      } else if (puntuacion >= 6) {
+        evaluacion = "Buen trabajo. Hay base atencional.";
+      } else {
+        evaluacion = "Conviene entrenar más la inhibición de respuesta.";
+      }
+
+      resultadoFinal.innerHTML = `
+        Resultado final: <strong>${puntuacion}</strong> puntos.<br>
+        ${evaluacion}
+      `;
+      resultadoFinal.style.display = "block";
+    }
+
+    caja.addEventListener("click", () => {
+      if (!juegoActivo) return;
+
+      if (colorActual === "verde") {
+        puntuacion += 1;
+        aciertos += 1;
+        mensajeEl.textContent = "Bien. Has esperado al estímulo correcto.";
+      } else if (colorActual === "rojo") {
+        puntuacion -= 1;
+        fallos += 1;
+        mensajeEl.textContent = "Error por impulsividad.";
+      }
+
+      actualizarPanel();
+      cambiarColorAleatorio();
+    });
+
+    botonEmpezar.addEventListener("click", empezarJuego);
+
+    actualizarPanel();
+  </script>
+</body>
+</html>
